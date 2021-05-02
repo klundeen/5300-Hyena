@@ -75,34 +75,40 @@ SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name,
 // .py line 100
 QueryResult *SQLExec::create(const CreateStatement *statement) {
 
-    string table_name = statement->; //not sure what statement can point to
-    string columns = statement->;
+    Identifier table_name = statement->tableName;
+    ColumnNames column_names;
 
-    // look at HeapTable.cpp 
-    // in storage_engine.h
-    // update _tables schema
-    ValueDict* t = new ValueDict();
-    Value v_tableName = Value(table_name);
-    (*t)[table_name] = v_tableName;
-    tables->insert(t);
-
-    try {
-        // update _columns schema
-        for(c: )
-        {
-
-        }
-        try {
-            for(column_name: Columns)
-
-        } catch() {
-
-        }
-
-
-    } catch(DbRelationError) {
-
+    ColumnAttributes column_attributes;
+    Identifier column_name;
+    ColumnAttribute column_attribute;
+    for (ColumnDefinition *col : *statement->columns)
+    {
+        column_definition(col, column_name, ColumnAttribute);
+        column_names.push_back(column_name);
+        column_attributes.push_back(column_attribute);
     }
+
+    ValueDict row;
+    row["table_name"] = table_name;
+    Handle t_handle = SQLExec::tables->insert(&row); //insert a row into table
+
+    try
+    {
+        for(uint i = 0; i < column_name.size(); i++)
+        {
+            row["column_name"] = column_names[i];
+            row["data_type"] = Value(column_attributes[i].get_data_type() == ColumnAttribute::INT ? "INT" : "TEXT");
+            c_handles.push_back(columns.insert(&row));
+        }
+
+        // create relation
+        DbRelation
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+    
 
     return new QueryResult("not implemented"); // FIXME
 }
