@@ -153,7 +153,14 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
 
 
 QueryResult *SQLExec::show(const ShowStatement *statement) {
-    return new QueryResult("not implemented"); // FIXME
+    switch(statement->type) {
+        case ShowStatement::kColumns:
+            return show_columns(statement);
+        case ShowStatement::kTables:
+            return show_tables();
+        default:
+            throw new SQLExecError("Unsupported show type");
+    }
 }
 
 // show tables
@@ -163,11 +170,6 @@ QueryResult *SQLExec::show_tables() {
 
 // show columns
 QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
-    // .py line 58
-    string table_name = statement->;
-    
 
-
-    return new QueryResult("not implemented"); // FIXME
 }
 
