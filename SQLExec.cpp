@@ -94,23 +94,40 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
 
     try
     {
-        for(uint i = 0; i < column_name.size(); i++)
-        {
-            row["column_name"] = column_names[i];
-            row["data_type"] = Value(column_attributes[i].get_data_type() == ColumnAttribute::INT ? "INT" : "TEXT");
-            c_handles.push_back(columns.insert(&row));
+        Handles c_handles;
+        DbRelation &columns = SQLExec::tables->get_table)Columns::TABLE_NAME);
+        try {
+            for(uint i = 0; i < column_name.size(); i++)
+            {
+                row["column_name"] = column_names[i];
+                row["data_type"] = Value(column_attributes[i].get_data_type() == ColumnAttribute::INT ? "INT" : "TEXT");
+                c_handles.push_back(columns.insert(&row));
+            }
+
+            // create relation
+            DbRelation &table = SQLExec::tables->get_table(table_name);
+            if(statement->ifNotExists)
+                table.create_if_not_exists();
+            else
+                table.create();
+        } catch(exception &e) {
+            try 
+            {
+                for (auto const &handle:c_handles)
+                    columns.del(handle);
+            }
+            catch(...) {}
+            throw;
+
         }
-
-        // create relation
-        DbRelation
     }
-    catch(const std::exception& e)
+    catch(exception& e)
     {
-        std::cerr << e.what() << '\n';
+       try {
+           SQLExec::tables->del(t_handle);
+       } catch(...) {}
     }
-    
-
-    return new QueryResult("not implemented"); // FIXME
+    return new QueryResult("created" + table_name);
 }
 
 // drop table
