@@ -68,11 +68,26 @@ QueryResult *SQLExec::execute(const SQLStatement *statement) {
 
 void
 SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name, ColumnAttribute &column_attribute) {
-    throw SQLExecError("not implemented");  // FIXME
+   column_name = col->name;
+   switch (col->type) {
+        case ColumnDefinition::INT:
+            column_attribute.set_data_type(ColumnAttribute::INT);
+            break;
+        case ColumnDefinition::TEXT:
+            column_attribute.set_data_type(ColumnAttribute::TEXT);
+            break;
+        case ColumnDefinition::DOUBLE:
+        default:
+            throw SQLExecError("unrecognized data type");
+   }
 }
 
-// create table
-// .py line 100
+/**
+ * This method creates a table using the values specified in CreateStatement
+ * 
+ * @param       statement       a CreateStatement to specify what table to create
+ * @returns                     a message to indicate the table is created successfully
+ */ 
 QueryResult *SQLExec::create(const CreateStatement *statement) {
 
     Identifier table_name = statement->tableName;
@@ -81,8 +96,7 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     ColumnAttributes column_attributes;
     Identifier column_name;
     ColumnAttribute column_attribute;
-    for (ColumnDefinition *col : *statement->columns)
-    {
+    for (ColumnDefinition *col : *statement->columns) {
         column_definition(col, column_name, column_attribute);
         column_names.push_back(column_name);
         column_attributes.push_back(column_attribute);
@@ -92,13 +106,11 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     row["table_name"] = table_name;
     Handle t_handle = SQLExec::tables->insert(&row); //insert a row into table
 
-    try
-    {
+    try {
         Handles c_handles;
         DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
         try {
-            for(uint i = 0; i < column_name.size(); i++)
-            {
+            for(uint i = 0; i < column_name.size(); i++) {
                 row["column_name"] = column_names[i];
                 row["data_type"] = Value(column_attributes[i].get_data_type() == ColumnAttribute::INT ? "INT" : "TEXT");
                 c_handles.push_back(columns.insert(&row));
@@ -111,18 +123,14 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
             else
                 table.create();
         } catch(exception &e) {
-            try 
-            {
+            try {
                 for (auto const &handle:c_handles)
                     columns.del(handle);
             }
             catch(...) {}
             throw;
-
         }
-    }
-    catch(exception& e)
-    {
+    } catch(exception& e) {
        try {
            SQLExec::tables->del(t_handle);
        } catch(...) {}
@@ -130,20 +138,25 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     return new QueryResult("created" + table_name);
 }
 
-// drop table
-// DROP ...
+/**
+ * This method drops a table specified by the DropStatement
+ * 
+ * @param       statement     a statement to specify which table to be dropped
+ * @returns                   a message to indicate the table is dropped successfully
+ */ 
 QueryResult *SQLExec::drop(const DropStatement *statement) {
     Identifier table_name = statement->name;
-    if(statement->type != hsql::DropStatement::kTable)
-        throw SQLExecError("unrecognized DROP type");
-    
+    if (table_name == Tables::TABLE_NAME || table_name == Columns::TABLE_NAME) {
+        throw SQLExecError("can't drop a schema table");
+    }
+
     ValueDict where;
     where["table_name"] = Value(table_name);
 
     // get the table to drop
     DbRelation &table = SQLExec::tables->get_table(table_name);
 
-    // remove columns from schema
+    // remove from _columns schema
     DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
     Handles *handles = columns.select(&where);
     for(auto const &handle : *handles)
@@ -153,9 +166,12 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
     // drop the table
     table.drop();
 
-    handles
+    // remove from _tables schema
+    handles = SQLExec::tables->select(&where);
+    SQLExec::tables->del(*handles->begin());
+    delete handles;
 
-    return new QueryResult("not implemented"); // FIXME
+    return new QueryResult("dropped " + table_name); 
 }
 
 /**
@@ -171,7 +187,7 @@ QueryResult *SQLExec::show(const ShowStatement *statement) {
         case ShowStatement::kTables:
             return show_tables();
         default:
-            throw new SQLExecError("Unsupported show type");
+            throw SQLExecError("Unsupported show type");
     }
 }
 
