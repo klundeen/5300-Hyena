@@ -152,7 +152,10 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
 }
 
 /**
- *  
+ *  This method displays table or columns metdata info based on the type of ShowStatement
+ * 
+ * @param statement         ShowStatement which to display metadata info of columns or tables etc.
+ * @returns                 QueryResult of metadata info for columns or tables etc based on table name
  */
 QueryResult *SQLExec::show(const ShowStatement *statement) {
     switch(statement->type) {
@@ -166,30 +169,32 @@ QueryResult *SQLExec::show(const ShowStatement *statement) {
 }
 
 /**
- * This method displays all the tables metadata info
+ * This method displays all tables metadata info excluding _tables, _columns.
  * 
- * @returns      querry result of show table 
+ * @returns         metadta info of different tables excluding _tables, _columns
  */
 QueryResult *SQLExec::show_tables() {
-    ColumnNames *column_names = new ColumnNames();
-    column_names->push_back("table_name");
-
-    ColumnAttributes *column_attributes = new ColumnAttributes();
-    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
-
-    Handles *handles = SQLExec::tables->select();
-    ValueDict *row;
+    ColumnNames *column_names;
+    ColumnAttributes *column_attributes;
     ValueDicts *rows;
 
+    column_names->push_back("table_name");
+    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
+    
+    Handles *handles = SQLExec::tables->select();
+    u_long n = handles->size() - 2;
+
     for (const auto & handle : *handles) {
-       row = SQLExec::tables->project(handle, column_names); 
+       ValueDict *row = SQLExec::tables->project(handle, column_names);
        Identifier table_name = (*row)["table_name"].s;
        if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME) {
            rows->push_back(row);
+       } else {
+           delete row;
        }
     }
-
-    return new QueryResult()
+    delete handles;
+    return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
 }
 
 /**
