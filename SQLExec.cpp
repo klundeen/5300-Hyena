@@ -83,7 +83,7 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     ColumnAttribute column_attribute;
     for (ColumnDefinition *col : *statement->columns)
     {
-        column_definition(col, column_name, ColumnAttribute);
+        column_definition(col, column_name, column_attribute);
         column_names.push_back(column_name);
         column_attributes.push_back(column_attribute);
     }
@@ -95,7 +95,7 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     try
     {
         Handles c_handles;
-        DbRelation &columns = SQLExec::tables->get_table)Columns::TABLE_NAME);
+        DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
         try {
             for(uint i = 0; i < column_name.size(); i++)
             {
@@ -158,7 +158,12 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
     return new QueryResult("not implemented"); // FIXME
 }
 
-
+/**
+ *  This method displays table or columns metdata info based on the type of ShowStatement
+ * 
+ * @param statement         ShowStatement which to display metadata info of columns or tables etc.
+ * @returns                 QueryResult of metadata info for columns or tables etc based on table name
+ */
 QueryResult *SQLExec::show(const ShowStatement *statement) {
     switch(statement->type) {
         case ShowStatement::kColumns:
@@ -170,13 +175,68 @@ QueryResult *SQLExec::show(const ShowStatement *statement) {
     }
 }
 
-// show tables
+/**
+ * This method displays all tables metadata info excluding schema table
+ * 
+ * @returns         metadta info of different tables excluding schema table
+ */
 QueryResult *SQLExec::show_tables() {
-    return new QueryResult("not implemented"); // FIXME
+    ColumnNames *column_names;
+    ColumnAttributes *column_attributes;
+    ValueDicts *rows;
+
+    column_names->push_back("table_name");
+    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
+    
+    Handles *handles = SQLExec::tables->select();
+    u_long n = handles->size() - 2;
+
+    for (const auto & handle : *handles) {
+       ValueDict *row = SQLExec::tables->project(handle, column_names);
+       Identifier table_name = (*row)["table_name"].s;
+       if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME) {
+           rows->push_back(row);
+       } else {
+           delete row;
+       }
+    }
+    delete handles;
+    return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
 }
 
-// show columns
+/**
+ * This method returns columns metadata info of a table
+ * 
+ * @param   statement       ShowStatement to display columns metadata info of a table
+ * @returns                 columns metadata info of a table
+ */ 
 QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
+    // obtain columns metadata table
+    DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
+    ColumnNames *column_names;
+    ColumnAttributes *column_attributes;
+    ValueDict condition;
+    ValueDicts *rows;
 
+    // construct ColumnNames
+    vector<string> columnList {"table_name", "column_name", "data_type"};
+    for(const auto& col : columnList) {
+        column_names->push_back(col);
+    }
+
+    // construct ColumnAttributes
+    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
+
+    // retrive info for the specifc table
+    condition["table_name"] = Value(statement->tableName);
+    Handles *handles = columns.select(&condition);
+    u_long n = handles->size();
+
+    for (const auto &handle: *handles) {
+        ValueDict *row = columns.project(handle, column_names);
+        rows->push_back(row);
+    }
+    delete handles;
+    return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
 }
 

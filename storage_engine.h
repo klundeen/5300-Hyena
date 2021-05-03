@@ -203,6 +203,8 @@ public:
         INT, TEXT
     };
 
+    ColumnAttribute() : data_type(INT) {}
+
     ColumnAttribute(DataType data_type) : data_type(data_type) {}
 
     virtual ~ColumnAttribute() {}
@@ -239,7 +241,7 @@ typedef std::vector<ColumnAttribute> ColumnAttributes;
 typedef std::pair<BlockID, RecordID> Handle;
 typedef std::vector<Handle> Handles;  // FIXME: will need to turn this into an iterator at some point
 typedef std::map<Identifier, Value> ValueDict;
-
+typedef std::vector<ValueDict *> ValueDicts;
 
 /**
  * @class DbRelationError - generic exception class for DbRelation
