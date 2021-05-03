@@ -43,9 +43,21 @@ ostream &operator<<(ostream &out, const QueryResult &qres) {
 }
 
 QueryResult::~QueryResult() {
-    // FIXME
-}
+    if (column_names != nullptr) {
+        delete column_names;
+    }
 
+    if (column_attributes != nullptr) {
+        delete column_attributes;
+    }
+
+    if (rows != nullptr) {
+        for (auto row : *rows) {
+            delete row;
+        }
+        delete rows;
+    }
+}
 
 QueryResult *SQLExec::execute(const SQLStatement *statement) {
     if (SQLExec::tables == nullptr)
@@ -134,8 +146,9 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
        try {
            SQLExec::tables->del(t_handle);
        } catch(...) {}
+       throw;
     }
-    return new QueryResult("created" + table_name);
+    return new QueryResult("created " + table_name);
 }
 
 /**
@@ -197,20 +210,20 @@ QueryResult *SQLExec::show(const ShowStatement *statement) {
  * @returns         metadta info of different tables excluding schema table
  */
 QueryResult *SQLExec::show_tables() {
-    ColumnNames *column_names;
-    ColumnAttributes *column_attributes;
-    ValueDicts *rows;
+    ColumnNames *column_names = new ColumnNames;
+    ColumnAttributes *column_attributes = new ColumnAttributes;
+    ValueDicts *rows = new ValueDicts;
 
     column_names->push_back("table_name");
     column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
     
     Handles *handles = SQLExec::tables->select();
-    u_long n = handles->size() - 2;
+    u_long n = handles->size() - 3;
 
     for (const auto & handle : *handles) {
        ValueDict *row = SQLExec::tables->project(handle, column_names);
        Identifier table_name = (*row)["table_name"].s;
-       if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME) {
+       if (table_name != Tables::TABLE_NAME && table_name != Columns::TABLE_NAME && table_name != Indices::TABLE_NAME) {
            rows->push_back(row);
        } else {
            delete row;
@@ -229,10 +242,10 @@ QueryResult *SQLExec::show_tables() {
 QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
     // obtain columns metadata table
     DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
-    ColumnNames *column_names;
-    ColumnAttributes *column_attributes;
+    ColumnNames *column_names = new ColumnNames;
+    ColumnAttributes *column_attributes = new ColumnAttributes;
     ValueDict condition;
-    ValueDicts *rows;
+    ValueDicts *rows = new ValueDicts;
 
     // construct ColumnNames
     vector<string> columnList {"table_name", "column_name", "data_type"};
