@@ -133,20 +133,27 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
 // drop table
 // DROP ...
 QueryResult *SQLExec::drop(const DropStatement *statement) {
+    Identifier table_name = statement->name;
     if(statement->type != hsql::DropStatement::kTable)
         throw SQLExecError("unrecognized DROP type");
     
-    string table_name = statement->; 
-    if (table_name. TABLE_NAME)//in schema tables.h
-    {
-        throw SQLExecError("Cannot drop a schema table!");
-    }
+    ValueDict where;
+    where["table_name"] = Value(table_name);
 
+    // get the table to drop
+    DbRelation &table = SQLExec::tables->get_table(table_name);
 
+    // remove columns from schema
+    DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
+    Handles *handles = columns.select(&where);
+    for(auto const &handle : *handles)
+        columns.del(handle);
     delete handles;
 
+    // drop the table
     table.drop();
-    SQLExec::tables->del(*SQLExec::tables->select(&where)->begin());
+
+    handles
 
     return new QueryResult("not implemented"); // FIXME
 }
