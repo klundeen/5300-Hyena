@@ -122,7 +122,7 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
         Handles c_handles;
         DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
         try {
-            for(uint i = 0; i < column_name.size(); i++) {
+            for(uint i = 0; i < column_names.size(); i++) {
                 row["column_name"] = column_names[i];
                 row["data_type"] = Value(column_attributes[i].get_data_type() == ColumnAttribute::INT ? "INT" : "TEXT");
                 c_handles.push_back(columns.insert(&row));
