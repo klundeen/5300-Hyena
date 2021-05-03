@@ -4,31 +4,31 @@ Adama Sanoh & Bryn Lasher
 Handoff Vid: https://youtu.be/BRvzuZNm_SI (updated because the first link did not work.)
 
 On CS1 make your directories, then clone our repository.
-'''
+```
 $ mkdir cpsc5300
 $ cd cpsc5300
 $ git clone https://github.com/klundeen/5300-Hyena.git
-'''
+```
 
 Milestone 1:
-'''
+```
 $ cd cpsc5300
 $ cd 5300-Hyena
 $ make
 $ ./sql5300 ~/cpsc5300/5300-Hyena
-'''
+```
 
 This program will promt you with 'SQL>' for sql statements the parse them and prin thtem out.
 To exit type 'quit'.
 
 
 Milestone 2:
-'''
+```
 $ cd cpsc5300
 $ cd 5300-Hyena
 $ make
 $ ./sql5300 ~/cpsc5300/5300-Hyena
-'''
+```
 
 This program will promt you with 'SQL>' for sql statements the parse them and prin thtem out.
 To test heap_storage.cpp type 'test'.
@@ -49,3 +49,21 @@ While milestone 1 should run fine, milestone 2 has an error.
 ---
 
 ## Milestone3: Schema Storage -- Team: Tong Xu, Yinhui Li
+Follow the previous steps to clone the tag for milestone3
+When "SQL" pops out, you can test with the following
+```
+SQL> show tables
+SQL> show columns from _tables
+SQL> show columns from _columns
+SQL> create table foo (id int, data text, x integer, y integer, z integer)
+SQL> create table foo (goober int)
+SQL> create table goo (x int, x text)
+SQL> show tables
+SQL> show columns from foo
+SQL> drop table foo
+SQL> show tables
+SQL> show columns from foo
+```
+
+---
+## Milestone4: Indexing Setup -- Team: Tong Xu, Yinhui Li
