@@ -83,7 +83,7 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     ColumnAttribute column_attribute;
     for (ColumnDefinition *col : *statement->columns)
     {
-        column_definition(col, column_name, ColumnAttribute);
+        column_definition(col, column_name, column_attribute);
         column_names.push_back(column_name);
         column_attributes.push_back(column_attribute);
     }
@@ -95,7 +95,7 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     try
     {
         Handles c_handles;
-        DbRelation &columns = SQLExec::tables->get_table)Columns::TABLE_NAME);
+        DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
         try {
             for(uint i = 0; i < column_name.size(); i++)
             {
@@ -169,9 +169,9 @@ QueryResult *SQLExec::show(const ShowStatement *statement) {
 }
 
 /**
- * This method displays all tables metadata info excluding _tables, _columns.
+ * This method displays all tables metadata info excluding schema table
  * 
- * @returns         metadta info of different tables excluding _tables, _columns
+ * @returns         metadta info of different tables excluding schema table
  */
 QueryResult *SQLExec::show_tables() {
     ColumnNames *column_names;
