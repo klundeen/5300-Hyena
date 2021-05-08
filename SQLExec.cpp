@@ -269,3 +269,18 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
     return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
 }
 
+QueryResult *SQLExec::show_index(const ShowStatement *statement) {
+    return new QueryResult("not implemented"); // FIXME
+}
+
+QueryResult *SQLExec::drop_index(const DropStatement *statement) {
+    return new QueryResult("drop index not implemented");  // FIXME
+}
+
+QueryResult *SQLExec::create_index(const CreateStatement *statement) {
+    return new QueryResult("create index not implemented");  // FIXME
+}
+
+//create table?
+
+
