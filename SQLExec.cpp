@@ -270,17 +270,50 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
 }
 
 QueryResult *SQLExec::show_index(const ShowStatement *statement) {
-    return new QueryResult("not implemented"); // FIXME
+    // obtain indices metadata table
+    DbRelation &indicies = SQLExec::tables->get_table(Indices::TABLE_NAME);
+
 }
 
+/**
+ * This method drops an index based on given DropStatement
+ * 
+ * @param statement     statement to specify which index to drop
+ * @return              QueryResult to specify the dropped index name
+ */
 QueryResult *SQLExec::drop_index(const DropStatement *statement) {
-    return new QueryResult("drop index not implemented");  // FIXME
+    Identifier table_name = statement->name;
+    Identifier index_name = statement->name;
+
+    // get the index to drop
+    DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
+
+    ValueDict where;
+    where["table_name"] = Value(table_name);
+    where["index_name"] = Value(index_name);
+
+    // remove from _indices schema
+    Handles *handles = SQLExec::indices->select(&where);
+    for(auto const &handle : *handles) {
+        SQLExec::indices->del(handle);
+    }
+    delete handles;
+
+    // drop the index
+    index.drop();
+
+    return new QueryResult("dropped index " + index_name); 
 }
 
 QueryResult *SQLExec::create_index(const CreateStatement *statement) {
-    return new QueryResult("create index not implemented");  // FIXME
+    Identifier table_name = statement->tableName;
+    Identifier index_name = statement->indexName;
+
+
+
+
 }
 
-//create table?
+
 
 
