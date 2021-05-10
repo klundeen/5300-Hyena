@@ -3,6 +3,10 @@
         "map": "cpp",
         "iosfwd": "cpp",
         "vector": "cpp",
-        "exception": "cpp"
+        "exception": "cpp",
+        "functional": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp"
     }
 }
