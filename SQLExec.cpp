@@ -290,6 +290,7 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
  * @returns                 index metadata info of a table
  */ 
 QueryResult *SQLExec::show_index(const ShowStatement *statement) {
+    // get table name
     Identifier table_name = statement->tableName;
     ValueDict where;
     where["table_name"] = Value(table_name);
@@ -301,6 +302,7 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
     ColumnAttributes *column_attributes = new ColumnAttributes;
     ValueDicts *rows = new ValueDicts;
 
+    // define columns
     column_names->push_back("table_name");
     column_names->push_back("index_name");
     column_names->push_back("seq_in_index");
@@ -309,12 +311,13 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
     column_names->push_back("is_unqiue");
     column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
 
+    // find those matched
     for (const auto &handle : *handles) {
         ValueDict *row = SQLExec::indices->project(handle, column_names);
         rows->push_back(row);
     }
+    
     delete handles;
-
     return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
 }
 
@@ -358,10 +361,12 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     Identifier table_name = statement->tableName;
     Identifier index_name = statement->indexName;
     Identifier index_type;
+
     bool is_unique;
     Identifier column_name;
     ValueDict row;
 
+    // get index type
     try {
         index_type = statement->indexType;
         is_unique = false;
@@ -376,12 +381,14 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     row["index_type"] = Value(index_type);
     row["is_unique"] = Value(is_unique);
 
+    //set indices to rows
     for (auto const &col_name : *statement->indexColumns) {
         row["column_name"] = Value(std::string(col_name));
         row["seq_in_index"] = Value(row["seq_in_index"].n + 1);
         Handle handle = SQLExec::indices->insert(&row);
     }
 
+    // create index
     DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
     index.create();
 
