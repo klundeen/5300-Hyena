@@ -166,6 +166,20 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
     ValueDict where;
     where["table_name"] = Value(table_name);
 
+    // remove from _indices schema
+    Handles *index_handles = SQLExec::indices->select(&where);
+    for(auto const &index_handle : *index_handles) {
+        SQLExec::indices->del(index_handle);
+    }
+    delete index_handles;
+
+    // remove indices of the table  
+    IndexNames index_names = SQLExec::indices->get_index_names(table_name);
+    for (Identifier index_name : index_names) {
+        DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
+        index.drop();
+    }
+
     // get the table to drop
     DbRelation &table = SQLExec::tables->get_table(table_name);
 
