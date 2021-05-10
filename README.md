@@ -49,21 +49,37 @@ While milestone 1 should run fine, milestone 2 has an error.
 ---
 
 ## Milestone3: Schema Storage -- Team: Tong Xu, Yinhui Li
-Follow the previous steps to clone the tag for milestone3
-When "SQL" pops out, you can test with the following
+The following statements are implemented in milestone 3
+* CREATE table
+* DROP table
+* SHOW tables
+* SHOW columns  
+
+
+On CS1, 
 ```
-SQL> show tables
-SQL> show columns from _tables
-SQL> show columns from _columns
-SQL> create table foo (id int, data text, x integer, y integer, z integer)
-SQL> create table foo (goober int)
-SQL> create table goo (x int, x text)
-SQL> show tables
-SQL> show columns from foo
-SQL> drop table foo
-SQL> show tables
-SQL> show columns from foo
+$ cd cpsc5300
+$ git clone https://github.com/klundeen/5300-Hyena.git
+$ git checkout tags/Milestone3
+$ make
+$ ./sql5300 ~/cpsc5300/5300-Hyena
 ```
 
 ---
 ## Milestone4: Indexing Setup -- Team: Tong Xu, Yinhui Li
+The following statements are implemented in milestone 4
+* CREATE index
+* SHOW index
+* DROP index
+
+On CS1,
+```
+$ cd cpsc5300
+$ git clone https://github.com/klundeen/5300-Hyena.git
+$ git checkout tags/Milestone4
+$ make
+$ ./sql5300 ~/cpsc5300/5300-Hyena
+```
+Here is our handoff video for milestone 3 and 4.
+
+---
