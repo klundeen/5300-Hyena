@@ -49,21 +49,17 @@ While milestone 1 should run fine, milestone 2 has an error.
 ---
 
 ## Milestone3: Schema Storage -- Team: Tong Xu, Yinhui Li
-Follow the previous steps to clone the tag for milestone3
-When "SQL" pops out, you can test with the following
-```
-SQL> show tables
-SQL> show columns from _tables
-SQL> show columns from _columns
-SQL> create table foo (id int, data text, x integer, y integer, z integer)
-SQL> create table foo (goober int)
-SQL> create table goo (x int, x text)
-SQL> show tables
-SQL> show columns from foo
-SQL> drop table foo
-SQL> show tables
-SQL> show columns from foo
-```
+The following statements are implemented in milestone 3
+* CREATE table
+* DROP table
+* SHOW tables
+* SHOW columns
 
 ---
 ## Milestone4: Indexing Setup -- Team: Tong Xu, Yinhui Li
+The following statements are implemented in milestone 4
+* CREATE index
+* SHOW index
+* DROP index
+
+---
