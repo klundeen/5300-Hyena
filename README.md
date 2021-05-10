@@ -53,7 +53,17 @@ The following statements are implemented in milestone 3
 * CREATE table
 * DROP table
 * SHOW tables
-* SHOW columns
+* SHOW columns  
+
+
+On CS1, 
+```
+$ cd cpsc5300
+$ git clone https://github.com/klundeen/5300-Hyena.git
+$ git checkout tags/Milestone3
+$ make
+$ ./sql5300 ~/cpsc5300/5300-Hyena
+```
 
 ---
 ## Milestone4: Indexing Setup -- Team: Tong Xu, Yinhui Li
@@ -61,5 +71,15 @@ The following statements are implemented in milestone 4
 * CREATE index
 * SHOW index
 * DROP index
+
+On CS1,
+```
+$ cd cpsc5300
+$ git clone https://github.com/klundeen/5300-Hyena.git
+$ git checkout tags/Milestone4
+$ make
+$ ./sql5300 ~/cpsc5300/5300-Hyena
+```
+Here is our handoff video for milestone 3 and 4.
 
 ---

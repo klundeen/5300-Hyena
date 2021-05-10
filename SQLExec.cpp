@@ -4,6 +4,7 @@
  * @see "Seattle University, CPSC5300, Spring 2021"
  */
 #include "SQLExec.h"
+#include <unordered_set>
 
 using namespace std;
 using namespace hsql;
@@ -381,8 +382,22 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     row["index_type"] = Value(index_type);
     row["is_unique"] = Value(is_unique);
 
+<<<<<<< HEAD
     //set indices to rows
+=======
+    ShowStatement show_statement = ShowStatement(ShowStatement::kColumns);
+    show_statement.tableName = statement->tableName;
+    QueryResult *queryResult = show_columns(&show_statement);
+    std::unordered_set<Value> columnSet;
+    for (ValueDict *valueDict : *queryResult->get_rows()) {
+        columnSet.insert(valueDict->at("column_name"));
+    }
+
+>>>>>>> 6095788c5c9d79f8c34943198979b2ea9246da44
     for (auto const &col_name : *statement->indexColumns) {
+        if (!columnSet.count(Value(std::string(col_name)))) {
+            throw SQLExecError(std::string(col_name) + "doesn't exist in " + std::string(table_name));
+        }
         row["column_name"] = Value(std::string(col_name));
         row["seq_in_index"] = Value(row["seq_in_index"].n + 1);
         Handle handle = SQLExec::indices->insert(&row);
