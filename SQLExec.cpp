@@ -269,10 +269,39 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
     return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
 }
 
+/**
+ * This method returns index metadata info of a table
+ * 
+ * @param   statement       ShowStatement to display index metadata info of a table
+ * @returns                 index metadata info of a table
+ */ 
 QueryResult *SQLExec::show_index(const ShowStatement *statement) {
-    // obtain indices metadata table
-    DbRelation &indicies = SQLExec::tables->get_table(Indices::TABLE_NAME);
+    Identifier table_name = statement->tableName;
+    ValueDict where;
+    where["table_name"] = Value(table_name);
 
+    Handles *handles = SQLExec::indices->select(&where);
+    u_long n = handles->size();
+
+    ColumnNames *column_names = new ColumnNames;
+    ColumnAttributes *column_attributes = new ColumnAttributes;
+    ValueDicts *rows = new ValueDicts;
+
+    column_names->push_back("table_name");
+    column_names->push_back("index_name");
+    column_names->push_back("seq_in_index");
+    column_names->push_back("column_name");
+    column_names->push_back("index_type");
+    column_names->push_back("is_unqiue");
+    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
+
+    for (const auto &handle : *handles) {
+        ValueDict *row = SQLExec::indices->project(handle, column_names);
+        rows->push_back(row);
+    }
+    delete handles;
+
+    return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
 }
 
 /**
