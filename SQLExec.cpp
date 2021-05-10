@@ -348,13 +348,44 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     return new QueryResult("dropped index " + index_name); 
 }
 
+/**
+ * This method creates an index based on the CreateStatement
+ * 
+ * @param statement     a statement to specify what index to be created on which table
+ * @return              QueryResult to specify cteated index name
+ */
 QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     Identifier table_name = statement->tableName;
     Identifier index_name = statement->indexName;
+    Identifier index_type;
+    bool is_unique;
+    Identifier column_name;
+    ValueDict row;
 
+    try {
+        index_type = statement->indexType;
+        is_unique = false;
+    } catch(exception &e) {
+        index_type = "BTREE";
+        is_unique = true;
+    }
 
+    row["table_name"] = Value(table_name);
+    row["index_name"] = Value(index_name);
+    row["seq_in_index"] = Value(0);
+    row["index_type"] = Value(index_type);
+    row["is_unique"] = Value(is_unique);
 
+    for (auto const &col_name : *statement->indexColumns) {
+        row["column_name"] = Value(std::string(col_name));
+        row["seq_in_index"] = Value(row["seq_in_index"].n + 1);
+        Handle handle = SQLExec::indices->insert(&row);
+    }
 
+    DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
+    index.create();
+
+    return new QueryResult(std::string("Created index ") + index_name);
 }
 
 
