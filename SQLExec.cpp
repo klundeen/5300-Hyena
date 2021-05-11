@@ -153,12 +153,75 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
 }
 
 /**
+ * This method creates an index based on the CreateStatement
+ * 
+ * @param statement     a statement to specify what index to be created on which table
+ * @return              QueryResult to specify cteated index name
+ */
+QueryResult *SQLExec::create_index(const CreateStatement *statement) {
+    Identifier table_name = statement->tableName;
+    Identifier index_name = statement->indexName;
+    Identifier index_type;
+
+    bool is_unique;
+    // Identifier column_name;
+
+    // get index type
+    try { 
+        index_type = statement->indexType;
+        is_unique = false;
+    } catch(exception &e) {
+        index_type = "BTREE";
+        is_unique = true;
+    }
+
+    ValueDict row;
+    row["table_name"] = Value(table_name);
+    row["index_name"] = Value(index_name);
+    row["seq_in_index"] = Value(0);
+    row["index_type"] = Value(index_type);
+    row["is_unique"] = Value(is_unique);
+
+    //set indices to rows
+    for (auto const &col_name : *statement->indexColumns) {
+        if (!columnSet.count(Value(string(col_name)))) {
+            throw SQLExecError(string(col_name) + "doesn't exist in " + string(table_name));
+        }
+        row["column_name"] = Value(string(col_name));
+        row["seq_in_index"] += 1;//Value(row["seq_in_index"].n + 1);
+        Handle handle = SQLExec::indices->insert(&row);
+    }
+    // create index
+    DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
+    index.create();
+
+    return new QueryResult(string("Created index ") + index_name);
+}
+
+/**
+ * This method drops specified by the DropStatement
+ * 
+ * @param       statement     a statement to specify to be dropped
+ * @returns                   a drop statement
+ */
+QueryResult *SQLExec::drop(const DropStatement *statement) {
+    switch (statement->type) {
+        case DropStatement::kTable:
+            return drop_table(statement);
+        case DropStatement::kIndex:
+            return drop_index(statement);
+        default:
+            return new QueryResult("Only DROP TABLE and DROP INDEX are implemented");
+    }
+}
+
+/**
  * This method drops a table specified by the DropStatement
  * 
  * @param       statement     a statement to specify which table to be dropped
  * @returns                   a message to indicate the table is dropped successfully
  */ 
-QueryResult *SQLExec::drop(const DropStatement *statement) {
+QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     Identifier table_name = statement->name;
     if (table_name == Tables::TABLE_NAME || table_name == Columns::TABLE_NAME) {
         throw SQLExecError("can't drop a schema table");
@@ -201,6 +264,39 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
 
     return new QueryResult("dropped " + table_name); 
 }
+
+/**
+ * This method drops an index based on given DropStatement
+ * 
+ * @param statement     statement to specify which index to drop
+ * @return              QueryResult to specify the dropped index name
+ */
+QueryResult *SQLExec::drop_index(const DropStatement *statement) {
+    Identifier table_name = statement->name;
+    Identifier index_name = statement->indexName;
+
+    // get the index to drop
+    DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
+
+    ValueDict where;
+    where["table_name"] = Value(table_name);
+    where["index_name"] = Value(index_name);
+
+    // remove from _indices schema
+    Handles *handles = SQLExec::indices->select(&where);
+    for(auto const &handle : *handles) {
+        SQLExec::indices->del(handle);
+    }
+    delete handles;
+
+    // drop the index
+    index.drop();
+
+    return new QueryResult("dropped index " + index_name); 
+}
+
+
+
 
 /**
  *  This method displays table or columns metdata info based on the type of ShowStatement
@@ -322,81 +418,9 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
     return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
 }
 
-/**
- * This method drops an index based on given DropStatement
- * 
- * @param statement     statement to specify which index to drop
- * @return              QueryResult to specify the dropped index name
- */
-QueryResult *SQLExec::drop_index(const DropStatement *statement) {
-    Identifier table_name = statement->name;
-    Identifier index_name = statement->name;
 
-    // get the index to drop
-    DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
 
-    ValueDict where;
-    where["table_name"] = Value(table_name);
-    where["index_name"] = Value(index_name);
 
-    // remove from _indices schema
-    Handles *handles = SQLExec::indices->select(&where);
-    for(auto const &handle : *handles) {
-        SQLExec::indices->del(handle);
-    }
-    delete handles;
-
-    // drop the index
-    index.drop();
-
-    return new QueryResult("dropped index " + index_name); 
-}
-
-/**
- * This method creates an index based on the CreateStatement
- * 
- * @param statement     a statement to specify what index to be created on which table
- * @return              QueryResult to specify cteated index name
- */
-QueryResult *SQLExec::create_index(const CreateStatement *statement) {
-    Identifier table_name = statement->tableName;
-    Identifier index_name = statement->indexName;
-    Identifier index_type;
-
-    bool is_unique;
-    // Identifier column_name;
-
-    // get index type
-    try { 
-        index_type = statement->indexType;
-        is_unique = false;
-    } catch(exception &e) {
-        index_type = "BTREE";
-        is_unique = true;
-    }
-
-    ValueDict row;
-    row["table_name"] = Value(table_name);
-    row["index_name"] = Value(index_name);
-    row["seq_in_index"] = Value(0);
-    row["index_type"] = Value(index_type);
-    row["is_unique"] = Value(is_unique);
-
-    //set indices to rows
-    for (auto const &col_name : *statement->indexColumns) {
-        if (!columnSet.count(Value(string(col_name)))) {
-            throw SQLExecError(string(col_name) + "doesn't exist in " + string(table_name));
-        }
-        row["column_name"] = Value(string(col_name));
-        row["seq_in_index"] += 1;//Value(row["seq_in_index"].n + 1);
-        Handle handle = SQLExec::indices->insert(&row);
-    }
-    // create index
-    DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
-    index.create();
-
-    return new QueryResult(string("Created index ") + index_name);
-}
 
 
 
