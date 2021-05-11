@@ -263,7 +263,7 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
         }
         */
         row["column_name"] = Value(string(col_name));
-        row["seq_in_index"] += 1;//Value(row["seq_in_index"].n + 1);
+        row["seq_in_index"] = Value(row["seq_in_index"].n + 1);
         Handle handle = SQLExec::indices->insert(&row);
     }
     // create index
