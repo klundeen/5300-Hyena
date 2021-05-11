@@ -96,6 +96,12 @@ SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name,
     }
 }
 
+/**
+ * This method passes create statement to different create type
+ * 
+ * @param statement     a statement to specify to be created
+ * @return              QueryResult to specify create function for different types
+ */
 QueryResult *SQLExec::create(const CreateStatement *statement) {
     switch (statement->type) {
         case CreateStatement::kTable:
@@ -107,22 +113,28 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
     }
 }
 
+/**
+ * This method creates a table based on the statement
+ * 
+ * @param statement     a statement to specify to be created a table
+ * @return              QueryResult to specify create a table
+ */
 QueryResult *SQLExec::create_table(const CreateStatement *statement) {
     Identifier table_name = statement->tableName;
     ColumnNames column_names;
     ColumnAttributes column_attributes;
     Identifier column_name;
     ColumnAttribute column_attribute;
+
     for (ColumnDefinition *col : *statement->columns) {
         column_definition(col, column_name, column_attribute);
         column_names.push_back(column_name);
         column_attributes.push_back(column_attribute);
     }
 
-    // Add to schema: _tables and _columns
     ValueDict row;
     row["table_name"] = table_name;
-    Handle t_handle = SQLExec::tables->insert(&row);  // Insert into _tables
+    Handle t_handle = SQLExec::tables->insert(&row); 
     try {
         Handles c_handles;
         DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
@@ -130,10 +142,9 @@ QueryResult *SQLExec::create_table(const CreateStatement *statement) {
             for (uint i = 0; i < column_names.size(); i++) {
                 row["column_name"] = column_names[i];
                 row["data_type"] = Value(column_attributes[i].get_data_type() == ColumnAttribute::INT ? "INT" : "TEXT");
-                c_handles.push_back(columns.insert(&row));  // Insert into _columns
+                c_handles.push_back(columns.insert(&row)); 
             }
 
-            // Finally, actually create the relation
             DbRelation &table = SQLExec::tables->get_table(table_name);
             if (statement->ifNotExists)
                 table.create_if_not_exists();
@@ -141,7 +152,6 @@ QueryResult *SQLExec::create_table(const CreateStatement *statement) {
                 table.create();
 
         } catch (exception &e) {
-            // attempt to remove from _columns
             try {
                 for (auto const &handle: c_handles)
                     columns.del(handle);
@@ -151,7 +161,6 @@ QueryResult *SQLExec::create_table(const CreateStatement *statement) {
 
     } catch (exception &e) {
         try {
-            // attempt to remove from _tables
             SQLExec::tables->del(t_handle);
         } catch (...) {}
         throw;
@@ -183,11 +192,12 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
 
     DbRelation &indices = SQLExec::tables->get_table(Indices::TABLE_NAME);
 
-    // check whehter the index already exists
+    // check index exists or not
     ValueDict where;
     where["table_name"] = Value(std::string(statement->tableName));
     where["index_name"] = Value(std::string(statement->indexName));
     Handles *handles = indices.select(&where);
+
     u_long n = handles->size();
     if (n > 0) {
         delete handles;
@@ -204,7 +214,12 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     return new QueryResult("created index " + std::string(statement->indexName));
 }
 
-// DROP ...
+/**
+ * This method passes drop statement to different drop type
+ * 
+ * @param statement     a statement to specify to be dropped
+ * @return              QueryResult to specify drop function for different types
+ */
 QueryResult *SQLExec::drop(const DropStatement *statement) {
     switch (statement->type) {
         case DropStatement::kTable:
@@ -216,7 +231,12 @@ QueryResult *SQLExec::drop(const DropStatement *statement) {
     }
 }
 
-
+/**
+ * This method drops a table based on the statement
+ * 
+ * @param statement     a statement to specify to be dropped a table
+ * @return              QueryResult to specify drop a table
+ */
 QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     Identifier table_name = statement->name;
     if (table_name == Tables::TABLE_NAME || table_name == Columns::TABLE_NAME)
@@ -240,7 +260,7 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
 
     // finally, remove from _tables schema
     handles = SQLExec::tables->select(&where);
-    SQLExec::tables->del(*handles->begin()); // expect only one row from select
+    SQLExec::tables->del(*handles->begin()); 
     delete handles;
 
     return new QueryResult(string("dropped ") + table_name);
@@ -274,6 +294,13 @@ QueryResult *SQLExec::drop_index(const DropStatement *statement) {
     return new QueryResult(string("dropped index ") + index_name);
 }
 
+
+/**
+ * This method passes show statement to different show type
+ * 
+ * @param statement     a statement to specify to be showed
+ * @return              QueryResult to specify show function for different types
+ */
 QueryResult *SQLExec::show(const ShowStatement *statement) {
     switch (statement->type) {
         case ShowStatement::kTables:
@@ -320,7 +347,6 @@ QueryResult *SQLExec::show_index(const ShowStatement *statement) {
         ValueDict *row = indices.project(handle, column_names);
         rows->push_back(row);
     }
-
     delete i_handles;
 
     string ret("successfully returned ");
