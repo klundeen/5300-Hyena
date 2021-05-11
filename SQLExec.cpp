@@ -125,7 +125,56 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
  * @returns                     a message to indicate the table is created successfully
  */ 
 QueryResult *SQLExec::create_table(const CreateStatement *statement) {
+    Identifier table_name = statement->tableName;
+    ColumnNames column_names;
+    ColumnAttributes column_attributes;
+    Identifier column_name;
+    ColumnAttribute column_attribute;
+    for (ColumnDefinition *col : *statement->columns) {
+        column_definition(col, column_name, column_attribute);
+        column_names.push_back(column_name);
+        column_attributes.push_back(column_attribute);
+    }
 
+    // Add to schema: _tables and _columns
+    ValueDict row;
+    row["table_name"] = table_name;
+    Handle t_handle = SQLExec::tables->insert(&row);  // Insert into _tables
+    try {
+        Handles c_handles;
+        DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
+        try {
+            for (uint i = 0; i < column_names.size(); i++) {
+                row["column_name"] = column_names[i];
+                row["data_type"] = Value(column_attributes[i].get_data_type() == ColumnAttribute::INT ? "INT" : "TEXT");
+                c_handles.push_back(columns.insert(&row));  // Insert into _columns
+            }
+
+            // Finally, actually create the relation
+            DbRelation &table = SQLExec::tables->get_table(table_name);
+            if (statement->ifNotExists)
+                table.create_if_not_exists();
+            else
+                table.create();
+
+        } catch (exception &e) {
+            // attempt to remove from _columns
+            try {
+                for (auto const &handle: c_handles)
+                    columns.del(handle);
+            } catch (...) {}
+            throw;
+        }
+
+    } catch (exception &e) {
+        try {
+            // attempt to remove from _tables
+            SQLExec::tables->del(t_handle);
+        } catch (...) {}
+        throw;
+    }
+    return new QueryResult("created " + table_name);
+/*
     Identifier table_name = statement->tableName;
     ColumnNames column_names;
 
@@ -173,6 +222,7 @@ QueryResult *SQLExec::create_table(const CreateStatement *statement) {
        throw;
     }
     return new QueryResult("created " + table_name);
+    */
 }
 
 /**
