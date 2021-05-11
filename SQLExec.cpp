@@ -166,23 +166,13 @@ QueryResult *SQLExec::create_table(const CreateStatement *statement) {
  * @return              QueryResult to specify cteated index name
  */
 QueryResult *SQLExec::create_index(const CreateStatement *statement) {
-   // get the table name and index name from statement
-    Identifier table_name = statement->tableName;
-    Identifier index_name = statement->indexName;
-    Identifier index_type = statement->indexType;
-
-    //ColumnNames column_names;
-    //ColumnAttributes column_attributes;
-    Identifier column_name;
-    //ColumnAttribute column_attribute;
-
     // Add to schema: _indices
     ValueDict row;
-    row["table_name"] = table_name;
-    row["index_name"] = index_name;
-    row["index_type"] = index_type;
+    row["table_name"] = Value(std::string(statement->tableName));
+    row["index_name"] = Value(std::string(statement->indexName));
+    row["index_type"] = Value(std::string(statement->indexType));
 
-    if (index_type == "BTREE") {
+    if (std::string(statement->indexType) == "BTREE") {
         row["is_unique"] = Value(true);
     } else {
         row["is_unique"] = Value(false);
@@ -193,39 +183,25 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
 
     DbRelation &indices = SQLExec::tables->get_table(Indices::TABLE_NAME);
 
-    // check if the index on given table already created
-    // DbIndex *index = SQLExec::indices->get_index(table_name, index_name);
+    // check whehter the index already exists
     ValueDict where;
-    where["table_name"] = Value(table_name);
-    where["index_name"] = Value(index_name);
-
+    where["table_name"] = Value(std::string(statement->tableName));
+    where["index_name"] = Value(std::string(statement->indexName));
     Handles *handles = indices.select(&where);
-
-    // the number of returned matching rows
     u_long n = handles->size();
     if (n > 0) {
         delete handles;
-        //delete &where;
-        //delete &row;
-        return new QueryResult("Error: DbRelationError: duplicate index " + table_name);
+        return new QueryResult("Error: DbRelationError: duplicate index already exists on " + std::string(statement->tableName));
     }
 
-    //Handles i_handles;
     for (auto const *col : *statement->indexColumns) {
-
         row["column_name"] = Value(col);
-
-        // increase idx
-        idx += 1;
-        row["seq_in_index"] = Value(idx);
-
+        row["seq_in_index"] = Value(++idx);
         handles->push_back(indices.insert(&row));  // Insert into _indices
-
     }
 
     delete handles;
-    return new QueryResult("created index " + index_name);
-
+    return new QueryResult("created index " + std::string(statement->indexName));
 }
 
 // DROP ...
