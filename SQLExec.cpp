@@ -367,6 +367,8 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     Identifier column_name;
     ValueDict row;
 
+    cout << "test1" << endl;
+
     // get index type
     try {
         index_type = statement->indexType;
@@ -376,24 +378,16 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
         is_unique = true;
     }
 
+    cout << "test2" << endl;
+
     row["table_name"] = Value(table_name);
     row["index_name"] = Value(index_name);
     row["seq_in_index"] = Value(0);
     row["index_type"] = Value(index_type);
     row["is_unique"] = Value(is_unique);
 
-<<<<<<< HEAD
+    cout << "test3" << endl;
     //set indices to rows
-=======
-    ShowStatement show_statement = ShowStatement(ShowStatement::kColumns);
-    show_statement.tableName = statement->tableName;
-    QueryResult *queryResult = show_columns(&show_statement);
-    std::unordered_set<Value> columnSet;
-    for (ValueDict *valueDict : *queryResult->get_rows()) {
-        columnSet.insert(valueDict->at("column_name"));
-    }
-
->>>>>>> 6095788c5c9d79f8c34943198979b2ea9246da44
     for (auto const &col_name : *statement->indexColumns) {
         if (!columnSet.count(Value(std::string(col_name)))) {
             throw SQLExecError(std::string(col_name) + "doesn't exist in " + std::string(table_name));
@@ -402,11 +396,12 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
         row["seq_in_index"] = Value(row["seq_in_index"].n + 1);
         Handle handle = SQLExec::indices->insert(&row);
     }
-
+    cout << "test4" << endl;
     // create index
     DbIndex &index = SQLExec::indices->get_index(table_name, index_name);
     index.create();
 
+    cout << "test5" << endl;
     return new QueryResult(std::string("Created index ") + index_name);
 }
 
