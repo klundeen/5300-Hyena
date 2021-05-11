@@ -253,6 +253,27 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     ValueDict where;
     where["table_name"] = Value(table_name);
 
+    // get the table
+    DbRelation &table = SQLExec::tables->get_table(table_name);
+
+    // remove from _columns schema
+    DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
+    Handles *handles = columns.select(&where);
+    for (auto const &handle: *handles)
+        columns.del(handle);
+    delete handles;
+
+    // remove table
+    table.drop();
+
+    // finally, remove from _tables schema
+    handles = SQLExec::tables->select(&where);
+    SQLExec::tables->del(*handles->begin()); // expect only one row from select
+    delete handles;
+
+    return new QueryResult(string("dropped ") + table_name);
+
+    /*
     // remove from _indices schema
     Handles *index_handles = SQLExec::indices->select(&where);
     for(auto const &index_handle : *index_handles) {
@@ -286,6 +307,7 @@ QueryResult *SQLExec::drop_table(const DropStatement *statement) {
     delete handles;
 
     return new QueryResult("dropped " + table_name); 
+    */
 }
 
 /**
@@ -333,6 +355,8 @@ QueryResult *SQLExec::show(const ShowStatement *statement) {
             return show_columns(statement);
         case ShowStatement::kTables:
             return show_tables();
+        case ShowStatement::kIndex:
+            return show_index(statement);
         default:
             throw SQLExecError("Unsupported show type");
     }
@@ -374,6 +398,29 @@ QueryResult *SQLExec::show_tables() {
  * @returns                 columns metadata info of a table
  */ 
 QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
+    DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
+
+    ColumnNames *column_names = new ColumnNames;
+    column_names->push_back("table_name");
+    column_names->push_back("column_name");
+    column_names->push_back("data_type");
+
+    ColumnAttributes *column_attributes = new ColumnAttributes;
+    column_attributes->push_back(ColumnAttribute(ColumnAttribute::TEXT));
+
+    ValueDict where;
+    where["table_name"] = Value(statement->tableName);
+    Handles *handles = columns.select(&where);
+    u_long n = handles->size();
+
+    ValueDicts *rows = new ValueDicts;
+    for (auto const &handle: *handles) {
+        ValueDict *row = columns.project(handle, column_names);
+        rows->push_back(row);
+    }
+    delete handles;
+    return new QueryResult(column_names, column_attributes, rows, "successfully returned " + to_string(n) + " rows");
+    /*
     // obtain columns metadata table
     DbRelation &columns = SQLExec::tables->get_table(Columns::TABLE_NAME);
     ColumnNames *column_names = new ColumnNames;
@@ -401,6 +448,7 @@ QueryResult *SQLExec::show_columns(const ShowStatement *statement) {
     }
     delete handles;
     return new QueryResult(column_names, column_attributes, rows, "returned " + to_string(n) + " rows");
+    */
 }
 
 /**
