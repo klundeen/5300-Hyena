@@ -63,6 +63,8 @@ QueryResult::~QueryResult() {
 QueryResult *SQLExec::execute(const SQLStatement *statement) {
     if (SQLExec::tables == nullptr)
         SQLExec::tables = new Tables();
+    if (SQLExec::indices == nullptr)
+        SQLExec::indices = new Indices();
     try {
         switch (statement->type()) {
             case kStmtCreate:
