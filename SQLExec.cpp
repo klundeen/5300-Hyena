@@ -97,13 +97,34 @@ SQLExec::column_definition(const ColumnDefinition *col, Identifier &column_name,
    }
 }
 
+
+
+
+/**
+ * This method specifies the create statement
+ * 
+ * @param       statement       a CreateStatement to specify to create
+ * @returns                     a message to indicate is created successfully
+ */
+QueryResult *SQLExec::create(const CreateStatement *statement) {
+    switch (statement->type) {
+        case CreateStatement::kTable:
+            return create_table(statement);
+        case CreateStatement::kIndex:
+            return create_index(statement);
+        default:
+            return new QueryResult("Only CREATE TABLE and CREATE INDEX are implemented");
+    }
+}
+
+
 /**
  * This method creates a table using the values specified in CreateStatement
  * 
  * @param       statement       a CreateStatement to specify what table to create
  * @returns                     a message to indicate the table is created successfully
  */ 
-QueryResult *SQLExec::create(const CreateStatement *statement) {
+QueryResult *SQLExec::create_table(const CreateStatement *statement) {
 
     Identifier table_name = statement->tableName;
     ColumnNames column_names;
@@ -163,7 +184,7 @@ QueryResult *SQLExec::create(const CreateStatement *statement) {
 QueryResult *SQLExec::create_index(const CreateStatement *statement) {
     Identifier table_name = statement->tableName;
     Identifier index_name = statement->indexName;
-    Identifier index_type;
+    Identifier index_type = statement->indexType;
 
     bool is_unique;
     // Identifier column_name;
