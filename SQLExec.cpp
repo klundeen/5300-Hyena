@@ -257,9 +257,11 @@ QueryResult *SQLExec::create_index(const CreateStatement *statement) {
 
     //set indices to rows
     for (auto const &col_name : *statement->indexColumns) {
+        /*
         if (!columnSet.count(Value(string(col_name)))) {
             throw SQLExecError(string(col_name) + "doesn't exist in " + string(table_name));
         }
+        */
         row["column_name"] = Value(string(col_name));
         row["seq_in_index"] += 1;//Value(row["seq_in_index"].n + 1);
         Handle handle = SQLExec::indices->insert(&row);
