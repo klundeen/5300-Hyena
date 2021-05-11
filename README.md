@@ -80,6 +80,6 @@ $ git checkout tags/Milestone4
 $ make
 $ ./sql5300 ~/cpsc5300/5300-Hyena
 ```
-Here is our handoff video for milestone 3 and 4.
-https://drive.google.com/file/d/1wXpLek5LobhSFXPhmmmRGCi58-gFLLfZ/view?usp=sharing
+Here is our [handoff video](https://drive.google.com/file/d/1wXpLek5LobhSFXPhmmmRGCi58-gFLLfZ/view?usp=sharing) for milestone 3 and 4.
+
 ---
