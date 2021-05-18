@@ -1,7 +1,12 @@
 # 5300-Hyena
 
-Adama Sanoh & Bryn Lasher
-Handoff Vid: https://youtu.be/BRvzuZNm_SI (updated because the first link did not work.)
+- Team 1: Adama Sanoh, Bryn Lasher
+- Team 2: Tong Xu, Yinhui Li
+- Team 3: Jara Lindsay, Ben Gruher
+
+---
+
+##Milestone 1: Skeleton -- Team 1
 
 On CS1 make your directories, then clone our repository.
 ```
@@ -10,7 +15,6 @@ $ cd cpsc5300
 $ git clone https://github.com/klundeen/5300-Hyena.git
 ```
 
-Milestone 1:
 ```
 $ cd cpsc5300
 $ cd 5300-Hyena
@@ -22,7 +26,7 @@ This program will promt you with 'SQL>' for sql statements the parse them and pr
 To exit type 'quit'.
 
 
-Milestone 2:
+##Milestone 2: Rudimentary Storage Engine -- Team 1
 ```
 $ cd cpsc5300
 $ cd 5300-Hyena
@@ -46,9 +50,11 @@ Also, insert only handles two data types for now, INTEGER (or INT) and TEXT.
 
 While milestone 1 should run fine, milestone 2 has an error.
 
+- Team 1's Handoff Video: https://youtu.be/BRvzuZNm_SI (updated because the first link did not work.)
+
 ---
 
-## Milestone3: Schema Storage -- Team: Tong Xu, Yinhui Li
+## Milestone 3: Schema Storage -- Team 2
 The following statements are implemented in milestone 3
 * CREATE table
 * DROP table
@@ -66,7 +72,7 @@ $ ./sql5300 ~/cpsc5300/5300-Hyena
 ```
 
 ---
-## Milestone4: Indexing Setup -- Team: Tong Xu, Yinhui Li
+## Milestone 4: Indexing Setup -- Team 2
 The following statements are implemented in milestone 4
 * CREATE index
 * SHOW index
@@ -80,6 +86,29 @@ $ git checkout tags/Milestone4
 $ make
 $ ./sql5300 ~/cpsc5300/5300-Hyena
 ```
-Here is our [handoff video](https://drive.google.com/file/d/1wXpLek5LobhSFXPhmmmRGCi58-gFLLfZ/view?usp=sharing) for milestone 3 and 4.
+- Team 2's [handoff video](https://drive.google.com/file/d/1wXpLek5LobhSFXPhmmmRGCi58-gFLLfZ/view?usp=sharing) for milestone 3 and 4.
 
 ---
+## Milestone 5: Insert, Delete, Simple Queries -- Team 3
+
+On CS1,
+```
+$ cd cpsc5300
+$ git clone https://github.com/klundeen/5300-Hyena.git
+$ git checkout tags/Milestone5
+$ make
+$ ./sql5300 ~/cpsc5300/data
+```
+
+## Milestone 6: BTree Index -- Team 3
+
+On CS1,
+```
+$ cd cpsc5300
+$ git clone https://github.com/klundeen/5300-Hyena.git
+$ git checkout tags/Milestone6
+$ make
+$ ./sql5300 ~/cpsc5300/data
+```
+
+- Team 3's Handoff Video: 

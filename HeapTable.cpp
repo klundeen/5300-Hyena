@@ -123,12 +123,27 @@ Handles *HeapTable::select(const ValueDict *where) {
         for (auto const &record_id: *record_ids) {
             Handle handle(block_id, record_id);
             if (selected(handle, where))
-                handles->push_back(Handle(block_id, record_id));
+                handles->push_back(handle);
         }
         delete record_ids;
         delete block;
     }
     delete block_ids;
+    return handles;
+}
+
+/**
+ * Refine another selection
+ *
+ * @param current_selection range of handles to filter
+ * @param where             predicates to match
+ * @return                  list of handles of the selected rows
+ */
+Handles *HeapTable::select(Handles *current_selection, const ValueDict *where) {
+    Handles *handles = new Handles();
+    for (auto const &handle: *current_selection)
+        if (selected(handle, where))
+            handles->push_back(handle);
     return handles;
 }
 
@@ -337,11 +352,11 @@ bool test_compare(DbRelation &table, Handle handle, int a, string b) {
     }
     value = (*result)["b"];
     if (value.s != b) {
-		delete result;
+        delete result;
         return false;
-	}
+    }
     value = (*result)["c"];
-	delete result;
+    delete result;
     if (value.n != (a % 2 == 0))
         return false;
     return true;

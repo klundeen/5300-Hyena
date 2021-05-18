@@ -43,6 +43,8 @@ private:
 
     static std::string insert(const hsql::InsertStatement *stmt);
 
+    static std::string del(const hsql::DeleteStatement *stmt);
+
     static std::string create(const hsql::CreateStatement *stmt);
 
     static std::string drop(const hsql::DropStatement *stmt);
