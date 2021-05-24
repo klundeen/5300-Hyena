@@ -94,6 +94,23 @@ public:
     virtual RecordIDs *ids() const = 0;
 
     /**
+     * Delete all the records from this block.
+     */
+    virtual void clear() = 0;
+
+    /**
+     * Get number of active (undeleted) records in this block.
+     * @returns  number of active records
+     */
+    virtual u_int16_t size() const = 0;
+
+    /**
+     * Get the number of bytes not currently used to store data or for overhead.
+     * @returns  number of unused bytes
+     */
+    virtual u_int16_t unused_bytes() const = 0;
+
+    /**
      * Access the whole block's memory as a BerkeleyDB Dbt pointer.
      * @returns  Dbt used by this block
      */
@@ -230,6 +247,10 @@ public:
     bool operator==(const Value &other) const;
 
     bool operator!=(const Value &other) const;
+
+    bool operator<(const Value &other) const;
+
+    friend std::ostream &operator<<(std::ostream &out, const Value &value);
 };
 
 // More type aliases
@@ -409,6 +430,14 @@ public:
      *                             by column names
      */
     virtual ColumnAttributes *get_column_attributes(const ColumnNames &select_column_names) const;
+
+    /**
+     * Accessor method for table_name
+     * @returns  table_name
+     */
+    virtual Identifier get_table_name() const {
+        return table_name;
+    }
 
 protected:
     Identifier table_name;

@@ -43,6 +43,13 @@ public:
 
     virtual RecordIDs *ids(void) const;
 
+    virtual void clear();
+
+    virtual u_int16_t size() const;
+
+    virtual u_int16_t unused_bytes() const;
+
+
 protected:
     uint16_t num_records;
     uint16_t end_free;
@@ -65,4 +72,5 @@ protected:
 };
 
 bool assertion_failure(std::string message, double x = -1, double y = -1);
+
 bool test_slotted_page();
