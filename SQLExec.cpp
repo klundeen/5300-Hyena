@@ -60,8 +60,48 @@ ostream &operator<<(ostream &out, const QueryResult &qres) {
  * @param expression    Statement expr
  * @return ValueDict    Return the where conjunction
  */
-ValueDict *get_where_conjunction(hsql::Expr *expression) {
-//FIXME
+ValueDict *get_where_conjunction(const hsql::Expr *expr, ColumnNames *columnNames) {
+
+    if (expr->type != kExprOperator) {
+        throw DbRelationError("unknown operator");
+    }
+    if (expr->opType != Expr::AND && expr->opType != Expr::SIMPLE_OP) {
+        throw DbRelationError("only support AND conjunctions");
+    }
+
+    ValueDict *rows = new ValueDict;
+
+    if (expr->opType == Expr::AND) {
+        // call get where conjunction recursively for AND
+        ValueDict *recursive_row = get_where_conjunction(expr->expr, columnNames);
+
+        if (!recursive_row->empty()) {
+            rows->insert(recursive_row->begin(), recursive_row->end());
+        }
+        recursive_row = get_where_conjunction(expr->expr2, columnNames);
+        rows->insert(recursive_row->begin(), recursive_row->end());
+    }
+
+    if (expr->opType == Expr::SIMPLE_OP) {
+        if (expr->opChar != '=') {
+            throw DbRelationError("only equality predicates currently supported");
+        }
+        Identifier column_name = expr->expr->name;
+        if (find(columnNames->begin(), columnNames->end(), column_name) == columnNames->end()) {
+            throw DbRelationError("unknown column '" + column_name + "'");
+        }
+        if (expr->expr2->type != kExprLiteralInt && expr->expr2->type != kExprLiteralString) {
+            throw DbRelationError("don't know how to handle given data type in WHERE clause");
+        }
+        if (expr->expr2->type == kExprLiteralInt) {
+            pair <Identifier, Value> value(column_name, Value(expr->expr2->ival));
+            rows->insert(value);
+        } else {
+            pair <Identifier, Value> value(column_name, Value(expr->expr2->name));
+            rows->insert(value);
+        }
+    }
+    return rows;
 }
 
 /**
@@ -191,9 +231,13 @@ QueryResult *SQLExec::del(const DeleteStatement *statement) {
     DbRelation &table = SQLExec::tables->get_table(table_name);
     EvalPlan *plan = new EvalPlan(table);
 
-    // Check for where statement FIXME
+    ColumnNames column_names;
+    for (auto const columns: table.get_column_names()) {
+        column_names.push_back(columns);
+    }
+
     if (statement->expr != nullptr) {
-        plan = new EvalPlan(get_where_conjunction(statement->expr), plan);
+        plan = new EvalPlan(get_where_conjunction(statement->expr, &column_names), plan);
     }
 
     EvalPlan *optimized = plan->optimize();
@@ -231,7 +275,42 @@ QueryResult *SQLExec::del(const DeleteStatement *statement) {
  * @return QueryResult  The result of the Select query
  */
 QueryResult *SQLExec::select(const SelectStatement *statement) {
-    return new QueryResult("SELECT statement not yet implemented");  // FIXME
+
+    Identifier tableName = statement->fromTable->name;
+    DbRelation &table = SQLExec::tables->get_table(tableName);
+    EvalPlan *plan = new EvalPlan(table);
+
+    ColumnNames column_names;
+    for (auto const columns: table.get_column_names()) {
+        column_names.push_back(columns);
+    }
+
+    if (statement->whereClause != nullptr) {
+        plan = new EvalPlan(get_where_conjunction(statement->whereClause, &column_names), plan);
+    }
+
+    // Wrap the whole thing in a ProjectAll or a Project
+    ColumnAttributes *columnAttributes = new ColumnAttributes;
+    ColumnNames *columnNames = new ColumnNames;
+
+    if (statement->selectList->front()->type == kExprStar) {
+        *columnNames = table.get_column_names();
+        *columnAttributes = table.get_column_attributes();
+        plan = new EvalPlan(EvalPlan::ProjectAll, plan);
+    } else {
+
+        for (auto const &columns : *statement->selectList) {
+            columnNames->push_back(columns->name);
+        }
+        *columnAttributes = table.get_column_attributes();
+        plan = new EvalPlan(columnNames, plan);
+    }
+
+    EvalPlan *optimized = plan->optimize();
+    ValueDicts *rows = optimized->evaluate();
+    u_long n = rows->size();
+    string output = "successfully returned " + to_string(n) + " rows";
+    return new QueryResult(columnNames, columnAttributes, rows, output);
 }
 
 void
