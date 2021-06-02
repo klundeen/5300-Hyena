@@ -89,7 +89,64 @@ QueryResult *SQLExec::execute(const SQLStatement *statement) {
 }
 
 QueryResult *SQLExec::insert(const InsertStatement *statement) {
-    return new QueryResult("INSERT statement not yet implemented");  // FIXME
+    // construct ValueDict
+    char* tableName = statement->tableName;
+    DbRelation &table = SQLExec::tables->get_table(tableName);
+    ValueDict row;
+    
+    // check that values/columns provided match the columns in the table
+    const ColumnNames &const_table_columns = table.get_column_names();
+    ColumnNames table_columns = const_table_columns;
+    const ColumnAttributes &const_table_attr = table.get_column_attributes();
+    ColumnAttributes table_attr = const_table_attr;
+    if(table_columns.size() != statement->values->size()) {
+        throw SQLExecError("DbRelationError: don't know how to handle NULLs, defaults, etc. yet");
+    }
+
+    // if column names are provided, map column names to values in order
+    if(statement->columns != NULL) {
+        for(size_t i = 0; i < statement->columns->size(); i++) {
+            char* columnName = statement->columns->at(i);
+
+            // find location in column names vector in order to lookup datatype in column attributes
+            int index;
+            auto it = find(table_columns.begin(), table_columns.end(), columnName);
+            if(it != table_columns.end())
+                index = it - table_columns.begin();
+            else
+                throw SQLExecError("Invalid column name");
+
+            // use index to lookup datatype in column attributes, if INT, then look at statement->ival, if TEXT, then look at statement->name
+            if(table_attr[index].get_data_type() == ColumnAttribute::INT)
+                row[columnName] = Value(statement->values->at(i)->ival);
+            else
+                row[columnName] = Value(statement->values->at(i)->name);
+        }
+    }
+    // columns not provided - add to columns in table order
+    else {
+        for(size_t i = 0; i < table_columns.size(); i++) {
+            if(table_attr[i].get_data_type() == ColumnAttribute::INT)
+                row[table_columns.at(i)] = Value(statement->values->at(i)->ival);
+            else
+                row[table_columns.at(i)] = Value(statement->values->at(i)->name);
+        }
+    }
+
+    // insert ValueDict into table
+    Handle insertHandle = table.insert(&row);
+    
+    // add to any indices
+    IndexNames indices = SQLExec::indices->get_index_names(tableName);
+    int numIndices = 0;
+    for(Identifier indexName: indices) {
+        numIndices++;
+        DbIndex &index = SQLExec::indices->get_index(tableName, indexName);
+        index.insert(insertHandle);
+    }
+
+    string output = string("successfully inserted 1 row into ") + string(tableName) + string(" and ") + to_string(numIndices) + string(" indices");
+    return new QueryResult(output);  
 }
 
 QueryResult *SQLExec::del(const DeleteStatement *statement) {
