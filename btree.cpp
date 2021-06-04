@@ -70,13 +70,37 @@ void BTreeIndex::close() {
 // Find all the rows whose columns are equal to key. Assumes key is a dictionary whose keys are the column
 // names in the index. Returns a list of row handles.
 Handles *BTreeIndex::lookup(ValueDict *key_dict) const {
-    // FIXME
-    return nullptr;
+    // this->open();
+    KeyValue *tkey = this->tkey(key_dict);
+    return this->_lookup(this->root, this->stat->get_height(), tkey);
+}
+
+// recursive lookup, returns Handles to rows containing key
+Handles *BTreeIndex::_lookup(BTreeNode *node, uint height, const KeyValue *key) const {
+    Handles* handles = new Handles();
+    if (height == 1) {
+        auto *leaf = dynamic_cast<BTreeLeaf *>(node);
+        try {
+            Handle h = leaf->find_eq(key);
+            handles->push_back(h);
+            return handles;
+        }
+        catch(...) {
+            // record not found
+            return nullptr;
+        }
+    } else {
+        auto *interior = dynamic_cast<BTreeInterior *>(node);
+        auto *found = interior->find(key, height);
+        return this->_lookup(found, height-1, key);
+    }
 }
 
 Handles *BTreeIndex::range(ValueDict *min_key, ValueDict *max_key) const {
     throw DbRelationError("Don't know how to do a range query on Btree index yet");
     // FIXME
+    // KeyValue *min_tkey = this->tkey(min_key);
+    // Handles *start = this->_lookup(this->root, this->stat->get_height(), min_tkey);
 }
 
 // Insert a row with the given handle. Row must exist in relation already.
@@ -108,7 +132,9 @@ Insertion BTreeIndex::_insert(BTreeNode *node, uint height, const KeyValue *key,
         return leaf->insert(key, handle);
     } else {
         auto *interior = dynamic_cast<BTreeInterior *>(node);
-        Insertion insertion = _insert(interior->find(key, height), height - 1, key, handle);
+        auto *found = interior->find(key, height);
+        Insertion insertion = _insert(found, height - 1, key, handle);
+        delete found;
         if (!BTreeNode::insertion_is_none(insertion))
             insertion = interior->insert(&insertion.second, insertion.first);
         return insertion;
@@ -156,7 +182,7 @@ bool test_btree() {
     row2["b"] = Value(101);
     table.insert(&row1);
     table.insert(&row2);
-    for (int i = 0; i < 100 * 1000; i++) {
+    for (int i = 0; i < 1000; i++) {
         ValueDict row;
         row["a"] = Value(i + 100);
         row["b"] = Value(-i);
@@ -166,7 +192,7 @@ bool test_btree() {
     column_names.push_back("a");
     BTreeIndex index(table, "fooindex", column_names, true);
     index.create();
-    return true;  // FIXME
+    // return true;  // FIXME
 
 
     ValueDict lookup;
@@ -210,6 +236,8 @@ bool test_btree() {
             delete handles;
             delete result;
         }
+
+    return true; // FIXME
 
     // test delete
     ValueDict row;
