@@ -1,10 +1,20 @@
 /**
+ * Hyena: Sprint Invierno
  * @file btree.cpp - implementation of BTreeIndex, etc.
  * @author Kevin Lundeen
+ * @author Ben Gruher
+ * @author Jara Lindsay
  * @see "Seattle University, CPSC5300, Spring 2021"
  */
 #include "btree.h"
 
+/**
+ * Constructor
+ * @param relation      DbRelation
+ * @param name          Identifier
+ * @param key_columns   ColumnNames
+ * @param unique        bool
+ */
 BTreeIndex::BTreeIndex(DbRelation &relation, Identifier name, ColumnNames key_columns, bool unique) : DbIndex(relation,
                                                                                                               name,
                                                                                                               key_columns,
@@ -20,12 +30,17 @@ BTreeIndex::BTreeIndex(DbRelation &relation, Identifier name, ColumnNames key_co
     build_key_profile();
 }
 
+/**
+ * Destructor
+ */
 BTreeIndex::~BTreeIndex() {
     delete stat;
     delete root;
 }
 
-// Create the index.
+/**
+ * Create a BTree Index
+ */
 void BTreeIndex::create() {
     file.create();
     stat = new BTreeStat(file, STAT, STAT + 1, key_profile);
@@ -37,12 +52,16 @@ void BTreeIndex::create() {
     delete table_rows;
 }
 
-// Drop the index.
+/**
+ * Drop the BTree Index
+ */
 void BTreeIndex::drop() {
     file.drop();
 }
 
-// Open existing index. Enables: lookup, range, insert, delete, update.
+/**
+ * Open existing index. Enables: lookup, range, insert, delete, update.
+ */
 void BTreeIndex::open() {
     if (closed) {
         file.open();
@@ -55,7 +74,9 @@ void BTreeIndex::open() {
     }
 }
 
-// Closes the index. Disables: lookup, range, insert, delete, update.
+/**
+ * Closes the index. Disables: lookup, range, insert, delete, update.
+ */
 void BTreeIndex::close() {
     if (!closed) {
         file.close();
@@ -67,17 +88,27 @@ void BTreeIndex::close() {
     }
 }
 
-// Find all the rows whose columns are equal to key. Assumes key is a dictionary whose keys are the column
-// names in the index. Returns a list of row handles.
+/**
+ * Find all the rows whose columns are equal to key. Assumes key is a dictionary whose
+ * keys are the column names in the index. Returns a list of row handles.
+ * @param key_dict  A ValueDict of keys
+ * @return Handles  A list of row handles
+ */
 Handles *BTreeIndex::lookup(ValueDict *key_dict) const {
     // this->open();
     KeyValue *tkey = this->tkey(key_dict);
     return this->_lookup(this->root, this->stat->get_height(), tkey);
 }
 
-// recursive lookup, returns Handles to rows containing key
+/**
+ * Recursive lookup
+ * @param node      BTreeNode
+ * @param height    uint height of the tree
+ * @param key       KeyValue key to lookup
+ * @return Handles  Handles to rows containing key
+ */
 Handles *BTreeIndex::_lookup(BTreeNode *node, uint height, const KeyValue *key) const {
-    Handles* handles = new Handles();
+    Handles *handles = new Handles();
     if (height == 1) {
         auto *leaf = dynamic_cast<BTreeLeaf *>(node);
         try {
@@ -85,17 +116,25 @@ Handles *BTreeIndex::_lookup(BTreeNode *node, uint height, const KeyValue *key) 
             handles->push_back(h);
             return handles;
         }
-        catch(...) {
+        catch (...) {
             // record not found
             return nullptr;
         }
     } else {
         auto *interior = dynamic_cast<BTreeInterior *>(node);
         auto *found = interior->find(key, height);
-        return this->_lookup(found, height-1, key);
+        return this->_lookup(found, height - 1, key);
     }
 }
 
+/**
+ * Finds all the rows whose columns are such that minkey <= columns <= maxkey.  Assumes key is a dictionary
+ * whose keys are the column names in the index.
+ * Some index subclasses do not support range().
+ * @param min_key   ValueDict minimum key value
+ * @param max_key   ValueDict maximum key value
+ * @return Handles  Returns a list of row handles
+ */
 Handles *BTreeIndex::range(ValueDict *min_key, ValueDict *max_key) const {
     throw DbRelationError("Don't know how to do a range query on Btree index yet");
     // FIXME
@@ -103,7 +142,10 @@ Handles *BTreeIndex::range(ValueDict *min_key, ValueDict *max_key) const {
     // Handles *start = this->_lookup(this->root, this->stat->get_height(), min_tkey);
 }
 
-// Insert a row with the given handle. Row must exist in relation already.
+/**
+ * Insert a row with the given handle. Row must exist in relation already.
+ * @param handle    Given handle to insert
+ */
 void BTreeIndex::insert(Handle handle) {
     open();
     ValueDict *key = relation.project(handle);
@@ -125,7 +167,14 @@ void BTreeIndex::insert(Handle handle) {
     delete tkey;
 }
 
-// Recursive insert. If a split happens at this level, return the (new node, boundary) of the split.
+/**
+ * Recursive insert. If a split happens at this level, return the (new node, boundary) of the split.
+ * @param node          BTreeNode
+ * @param height        uint tree height
+ * @param key           KeyValue to insert
+ * @param handle        Handle
+ * @return insertion    Returns the insertion
+ */
 Insertion BTreeIndex::_insert(BTreeNode *node, uint height, const KeyValue *key, Handle handle) {
     if (height == 1) {
         auto *leaf = dynamic_cast<BTreeLeaf *>(node);
@@ -141,11 +190,20 @@ Insertion BTreeIndex::_insert(BTreeNode *node, uint height, const KeyValue *key,
     }
 }
 
+/**
+ * Delete a row with the given handle. Row must still exist in relation.
+ * @param handle    Given handle to delete
+ */
 void BTreeIndex::del(Handle handle) {
     throw DbRelationError("Don't know how to delete from a BTree index yet");
     // FIXME
 }
 
+/**
+ * Transform a key dictionary into a tuple in the correct order.
+ * @param key       ValueDict key
+ * @return KeyValue The key value
+ */
 KeyValue *BTreeIndex::tkey(const ValueDict *key) const {
     KeyValue *key_value = new KeyValue();
     for (auto const &column_name: key_columns)
@@ -153,7 +211,9 @@ KeyValue *BTreeIndex::tkey(const ValueDict *key) const {
     return key_value;
 }
 
-// Figure out the data types of each key component and encode them in key_profile, a list of int/str classes.
+/**
+ * Figure out the data types of each key component and encode them in key_profile, a list of int/str classes.
+ */
 void BTreeIndex::build_key_profile() {
     std::map<const Identifier, ColumnAttribute::DataType> types_by_colname;
     const ColumnAttributes column_attributes = relation.get_column_attributes();
@@ -166,6 +226,10 @@ void BTreeIndex::build_key_profile() {
         key_profile.push_back(types_by_colname[column_name]);
 }
 
+/**
+ *
+ * @return true/false   Return true if tests pass, false if tests fail
+ */
 bool test_btree() {
     ColumnNames column_names;
     column_names.push_back("a");
@@ -194,7 +258,6 @@ bool test_btree() {
     index.create();
     // return true;  // FIXME
 
-
     ValueDict lookup;
     lookup["a"] = 12;
     Handles *handles = index.lookup(&lookup);
@@ -216,6 +279,7 @@ bool test_btree() {
     delete result;
     lookup["a"] = 6;
     handles = index.lookup(&lookup);
+    // Current Segmentation Fault // FIXME
     if (handles->size() != 0) {
         std::cout << "third lookup failed" << std::endl;
         return false;
@@ -239,6 +303,9 @@ bool test_btree() {
 
     return true; // FIXME
 
+    // Delete and Range not in implementation, test code for these areas commented below.
+
+    /*
     // test delete
     ValueDict row;
     row["a"] = 44;
@@ -306,5 +373,6 @@ bool test_btree() {
     index.drop();
     table.drop();
     return true;
+     */
 }
 
