@@ -136,9 +136,6 @@ Handles *BTreeIndex::_lookup(BTreeNode *node, uint height, const KeyValue *key) 
  */
 Handles *BTreeIndex::range(ValueDict *min_key, ValueDict *max_key) const {
     throw DbRelationError("Don't know how to do a range query on Btree index yet");
-    // FIXME
-    // KeyValue *min_tkey = this->tkey(min_key);
-    // Handles *start = this->_lookup(this->root, this->stat->get_height(), min_tkey);
 }
 
 /**
@@ -195,7 +192,6 @@ Insertion BTreeIndex::_insert(BTreeNode *node, uint height, const KeyValue *key,
  */
 void BTreeIndex::del(Handle handle) {
     throw DbRelationError("Don't know how to delete from a BTree index yet");
-    // FIXME
 }
 
 /**
@@ -226,7 +222,7 @@ void BTreeIndex::build_key_profile() {
 }
 
 /**
- *
+ * Test the btree lookup implementation
  * @return true/false   Return true if tests pass, false if tests fail
  */
 bool test_btree() {
@@ -255,8 +251,6 @@ bool test_btree() {
     column_names.push_back("a");
     BTreeIndex index(table, "fooindex", column_names, true);
     index.create();
-    // return true;  // FIXME
-
     ValueDict lookup;
     lookup["a"] = 12;
     Handles *handles = index.lookup(&lookup);
@@ -298,8 +292,6 @@ bool test_btree() {
             delete handles;
             delete result;
         }
-
-    return true; // FIXME
 
     // Delete and Range not in implementation, test code for these areas commented below.
 
@@ -368,9 +360,10 @@ bool test_btree() {
         std::cout << "delete everything failed: " << count_i << std::endl;
         return false;
     }
+     */
+
     index.drop();
     table.drop();
     return true;
-     */
 }
 

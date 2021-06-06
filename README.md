@@ -101,7 +101,10 @@ $ ./sql5300 ~/cpsc5300/data
 ```
 
 ## Milestone 6: BTree Index -- Team 3
-
+Be sure to clear the data before each run for Milestone 6: 
+```
+$ rm -f ~/cpsc5300/data/*
+```
 On CS1,
 ```
 $ cd cpsc5300
@@ -110,5 +113,16 @@ $ git checkout tags/Milestone6
 $ make
 $ ./sql5300 ~/cpsc5300/data
 ```
+Once the program is running, to run Milestone 6 test: 
+```
+SQL> test
+```
+Running Valgrind:
+```
+valgrind --leak-check=full --show-leak-kinds=all -s --suppressions=valgrind.supp ./sql5300 ~/cpsc5300/data/
+```
 
-- Team 3's Handoff Video: 
+### Team 3's Handoff: 
+- Milestone 5 should work except for the deletion from a BTree index, as that is not currently implemented. 
+- Milestone 6 test should pass all lookup tests. Range and Delete tests were commented out as they are not implemented. 
+- There are quite a few memory leaks in Milestones 5&6. We unfortunately ran out of time to go through and fix them all. 
