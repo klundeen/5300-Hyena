@@ -110,16 +110,15 @@ Handles *BTreeIndex::lookup(ValueDict *key_dict) const {
 Handles *BTreeIndex::_lookup(BTreeNode *node, uint height, const KeyValue *key) const {
     Handles *handles = new Handles();
     if (height == 1) {
-        auto *leaf = dynamic_cast<BTreeLeaf *>(node);
         try {
+            auto *leaf = dynamic_cast<BTreeLeaf *>(node);
             Handle h = leaf->find_eq(key);
             handles->push_back(h);
-            return handles;
         }
         catch (...) {
             // record not found
-            return nullptr;
         }
+        return handles;
     } else {
         auto *interior = dynamic_cast<BTreeInterior *>(node);
         auto *found = interior->find(key, height);
@@ -279,7 +278,6 @@ bool test_btree() {
     delete result;
     lookup["a"] = 6;
     handles = index.lookup(&lookup);
-    // Current Segmentation Fault // FIXME
     if (handles->size() != 0) {
         std::cout << "third lookup failed" << std::endl;
         return false;
