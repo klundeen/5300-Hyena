@@ -4,6 +4,7 @@
 #include "db_cxx.h"
 #include "SQLParser.h"
 #include "sqlhelper.h"
+#include "heap_storage.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
@@ -240,8 +241,11 @@ string execute(const SQLStatement *statement) {
   }
 }
 
+DbEnv *_DB_ENV;
+
 int main(int argc, char* argv[]){
   const string QUIT = "quit";
+  const string TEST = "test";
   string userInput = "";
   char *location;
   SQLParserResult* parsedResult;
@@ -260,12 +264,19 @@ int main(int argc, char* argv[]){
   myEnv.set_error_stream(&cerr);
   myEnv.open(location, DB_CREATE | DB_INIT_MPOOL, 0);
 
+  _DB_ENV = &myEnv;
+
   while (true) {
     cout << "SQL> ";
     getline(cin, userInput);
 
     if (userInput == QUIT) {
       break;
+    }
+
+    if (userInput == TEST) {
+      cout << "testing_heap_storage: " << (test_heap_storage() ? "ok" : "failed") << endl;
+      continue;
     }
     
     parsedResult = SQLParser::parseSQLString(userInput);

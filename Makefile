@@ -10,7 +10,7 @@ INCLUDE_DIR     = $(COURSE)/include
 LIB_DIR         = $(COURSE)/lib
 
 # List of compiled object files needed to build the main executable    
-OBJS	= sql5300.o
+OBJS	= sql5300.o heap_storage.o
 
 # General rule for compilation                                                                
 %.o: %.cpp
@@ -19,7 +19,10 @@ OBJS	= sql5300.o
 # Rule for linking to create the executable                                                   
 # Note that this is the default target                                                        
 sql5300: $(OBJS)
-	g++ -L$(LIB_DIR) -o $@ $< -ldb_cxx -lsqlparser
+	g++ -L$(LIB_DIR) -o $@ $(OBJS) -ldb_cxx -lsqlparser
+
+sql5300.o : heap_storage.h storage_engine.h
+heap_storage.o : heap_storage.h storage_engine.h
 
 # Rule for removing all non-source files                                                      
 clean:
